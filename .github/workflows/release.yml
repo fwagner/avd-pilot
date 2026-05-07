@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: publish
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: macos-latest
+    steps:
+      - name: Validate release promotion merge
+        id: gate
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const labels = (pr.labels || []).map((l) => l.name);
+            const fromDevelop = pr.head?.ref === "develop";
+            const hasPromoteLabel = labels.includes("release-promote");
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+            const names = new Set(files.map((f) => f.filename));
+            const hasPubspec = names.has("pubspec.yaml");
+            const hasChangelog = names.has("CHANGELOG.md");
+            const shouldRelease = fromDevelop && hasPromoteLabel && hasPubspec && hasChangelog;
+            core.setOutput("should_release", String(shouldRelease));
+
+      - name: Checkout merge commit
+        if: steps.gate.outputs.should_release == 'true'
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Setup Flutter
+        if: steps.gate.outputs.should_release == 'true'
+        uses: subosito/flutter-action@f2c4f6686ca8e8d6e6d0f28410eeef506ed66aff # v2.18.0
+        with:
+          channel: stable
+
+      - name: Install build dependencies
+        if: steps.gate.outputs.should_release == 'true'
+        run: |
+          brew install librsvg
+          npm install -g appdmg
+
+      - name: Build app and DMG
+        if: steps.gate.outputs.should_release == 'true'
+        run: |
+          flutter pub get
+          flutter build macos --release
+          npx appdmg "dist/appdmg.json" "dist/AVD-Pilot-Installer.dmg"
+
+      - name: Compute version and checksum
+        if: steps.gate.outputs.should_release == 'true'
+        id: metadata
+        run: |
+          set -euo pipefail
+          VERSION_LINE=$(grep '^version:' pubspec.yaml)
+          VERSION=$(echo "$VERSION_LINE" | awk '{print $2}' | cut -d+ -f1)
+          TAG="v${VERSION}"
+          shasum -a 256 "dist/AVD-Pilot-Installer.dmg" > "dist/AVD-Pilot-Installer.dmg.sha256"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag and publish GitHub release
+        if: steps.gate.outputs.should_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.metadata.outputs.tag }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --target "${GITHUB_SHA}" \
+              --title "AVD Pilot $VERSION" \
+              --notes "$(cat <<'EOF'
+          Automated release from the develop -> main promotion PR.
+
+          This DMG is currently unsigned and not notarized.
+
+          ## Verify download checksum
+
+          ```bash
+          shasum -a 256 AVD-Pilot-Installer.dmg
+          ```
+
+          Compare the output with the attached `.sha256` file.
+
+          ## Install unsigned app on macOS
+
+          1. Open the DMG and drag `AVD Pilot.app` to `Applications`.
+          2. Right-click the app in `Applications` and choose `Open`.
+          3. Confirm the prompt to bypass Gatekeeper for this run.
+          EOF
+          )"
+          fi
+
+          gh release upload "$TAG" \
+            "dist/AVD-Pilot-Installer.dmg" \
+            "dist/AVD-Pilot-Installer.dmg.sha256" \
+            --clobber
