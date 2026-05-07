@@ -1,0 +1,301 @@
+import 'package:emulator_device_manager/providers/logcat_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class LogsTab extends ConsumerStatefulWidget {
+  const LogsTab({super.key, required this.avdName});
+  final String avdName;
+
+  @override
+  ConsumerState<LogsTab> createState() => _LogsTabState();
+}
+
+class _LogsTabState extends ConsumerState<LogsTab> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isAtBottom = true;
+  int _lastLineCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    final double delta =
+        _scrollController.position.maxScrollExtent - _scrollController.offset;
+    final bool atBottom = delta < 24;
+    if (atBottom != _isAtBottom) {
+      setState(() => _isAtBottom = atBottom);
+    }
+  }
+
+  void _jumpToLatest() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    final double target = _scrollController.position.maxScrollExtent;
+    _scrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _snapToLatest() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final LogcatState logcat = ref.watch(logcatNotifierProvider(widget.avdName));
+    final LogcatNotifier notifier = ref.read(
+      logcatNotifierProvider(widget.avdName).notifier,
+    );
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final bool darkMode = Theme.of(context).brightness == Brightness.dark;
+    final Color consoleBackground = darkMode
+        ? const Color(0xFF111111)
+        : const Color(0xFF1E1E1E);
+    final Color consoleText = darkMode
+        ? const Color(0xFFD4D4D4)
+        : const Color(0xFFE6E6E6);
+
+    if (logcat.lines.length != _lastLineCount) {
+      _lastLineCount = logcat.lines.length;
+      if (_isAtBottom) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _snapToLatest());
+      }
+    }
+
+    return Column(
+      children: <Widget>[
+        _LogToolbar(
+          state: logcat,
+          lineCount: logcat.lines.length,
+          onPauseResume: () => logcat.paused ? notifier.resume() : notifier.pause(),
+          onReconnect: notifier.reconnect,
+          onClear: notifier.clear,
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: consoleBackground,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: cs.outlineVariant.withValues(alpha: 0.45),
+                width: 0.6,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Stack(
+                children: <Widget>[
+                  if (logcat.lines.isEmpty)
+                    Center(
+                      child: Text(
+                        _emptyLabel(logcat.status),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: consoleText.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(0, 6, 0, 10),
+                      itemCount: logcat.lines.length,
+                      itemBuilder: (_, index) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 1,
+                          ),
+                          child: Text(
+                            logcat.lines[index],
+                            style: TextStyle(
+                              color: consoleText,
+                              fontSize: 12,
+                              height: 1.35,
+                              letterSpacing: 0,
+                              fontFamily: 'SF Mono',
+                              fontFamilyFallback: const <String>[
+                                'Menlo',
+                                'Monaco',
+                                'Consolas',
+                                'Liberation Mono',
+                                'Courier New',
+                                'monospace',
+                              ],
+                              fontFeatures: const <FontFeature>[
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  if (!_isAtBottom && logcat.lines.isNotEmpty)
+                    Positioned(
+                      right: 12,
+                      bottom: 12,
+                      child: FilledButton.tonalIcon(
+                        onPressed: _jumpToLatest,
+                        icon: const Icon(Icons.arrow_downward_rounded, size: 14),
+                        label: const Text('Jump to latest'),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _emptyLabel(LogcatStatus status) {
+    switch (status) {
+      case LogcatStatus.idle:
+        return 'Waiting for emulator...';
+      case LogcatStatus.live:
+      case LogcatStatus.paused:
+        return 'Waiting for logcat...';
+      case LogcatStatus.disconnected:
+        return 'Start the emulator to capture logs.';
+      case LogcatStatus.error:
+        return 'Unable to read logs.';
+    }
+  }
+}
+
+class _LogToolbar extends StatelessWidget {
+  const _LogToolbar({
+    required this.state,
+    required this.lineCount,
+    required this.onPauseResume,
+    required this.onReconnect,
+    required this.onClear,
+  });
+
+  final LogcatState state;
+  final int lineCount;
+  final VoidCallback onPauseResume;
+  final VoidCallback onReconnect;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final bool disconnected = state.status == LogcatStatus.disconnected;
+    final bool canPause = state.status == LogcatStatus.live || state.paused;
+
+    return Row(
+      children: <Widget>[
+        _StatusChip(status: state.status),
+        const SizedBox(width: 8),
+        Text(
+          '$lineCount lines',
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+          ),
+        ),
+        if (state.error != null) ...<Widget>[
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              state.error!,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(color: cs.error),
+            ),
+          ),
+        ] else
+          const Spacer(),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed: disconnected ? onReconnect : (canPause ? onPauseResume : null),
+          tooltip: disconnected
+              ? 'Reconnect logcat'
+              : (state.paused ? 'Resume' : 'Pause'),
+          icon: Icon(
+            disconnected
+                ? Icons.play_arrow_rounded
+                : (state.paused ? Icons.play_arrow_rounded : Icons.pause_rounded),
+          ),
+        ),
+        IconButton(
+          onPressed: state.lines.isEmpty ? null : onClear,
+          tooltip: 'Clear logs',
+          icon: const Icon(Icons.delete_sweep_outlined),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.status});
+  final LogcatStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final ({String label, Color fg, Color bg}) style = switch (status) {
+      LogcatStatus.live => (
+        label: 'Live',
+        fg: cs.onPrimaryContainer,
+        bg: cs.primaryContainer,
+      ),
+      LogcatStatus.paused => (
+        label: 'Paused',
+        fg: cs.onSecondaryContainer,
+        bg: cs.secondaryContainer,
+      ),
+      LogcatStatus.disconnected => (
+        label: 'Disconnected',
+        fg: cs.onSurfaceVariant,
+        bg: cs.surfaceContainerHighest,
+      ),
+      LogcatStatus.error => (
+        label: 'Error',
+        fg: cs.onErrorContainer,
+        bg: cs.errorContainer,
+      ),
+      LogcatStatus.idle => (
+        label: 'Idle',
+        fg: cs.onSurfaceVariant,
+        bg: cs.surfaceContainerHigh,
+      ),
+    };
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: style.bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Text(
+          style.label,
+          style: theme.textTheme.labelSmall?.copyWith(color: style.fg),
+        ),
+      ),
+    );
+  }
+}

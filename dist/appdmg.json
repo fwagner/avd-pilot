@@ -1,0 +1,26 @@
+{
+  "title": "AVD Pilot Installer",
+  "format": "UDZO",
+  "background": "../branding/dmg_background.png",
+  "window": {
+    "size": {
+      "width": 1200,
+      "height": 760
+    }
+  },
+  "icon-size": 164,
+  "contents": [
+    {
+      "x": 330,
+      "y": 470,
+      "type": "file",
+      "path": "../build/macos/Build/Products/Release/AVD Pilot.app"
+    },
+    {
+      "x": 860,
+      "y": 470,
+      "type": "link",
+      "path": "/Applications"
+    }
+  ]
+}

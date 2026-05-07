@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9CF0C5"/>
+      <stop offset="0.55" stop-color="#1FAE5E"/>
+      <stop offset="1" stop-color="#0E7C5E"/>
+    </linearGradient>
+    <linearGradient id="topHighlight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.32"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="phoneBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1B2244"/>
+      <stop offset="1" stop-color="#0A0E26"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#142136"/>
+      <stop offset="1" stop-color="#1F5E54"/>
+    </linearGradient>
+    <linearGradient id="droidGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7FE9B2"/>
+      <stop offset="1" stop-color="#1FAE5E"/>
+    </linearGradient>
+    <linearGradient id="capGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1FAE5E"/>
+      <stop offset="1" stop-color="#0E7C46"/>
+    </linearGradient>
+    <linearGradient id="capWhite" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DDE7E2"/>
+    </linearGradient>
+    <linearGradient id="goldWings" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE9A8"/>
+      <stop offset="1" stop-color="#D9A33A"/>
+    </linearGradient>
+    <linearGradient id="capDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3850"/>
+      <stop offset="0.6" stop-color="#152038"/>
+      <stop offset="1" stop-color="#0A0F22"/>
+    </linearGradient>
+
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="14"/>
+      <feOffset dx="0" dy="18"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.42"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="droidShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="12"/>
+      <feOffset dx="0" dy="14"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.42"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="dotShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+      <feOffset dx="0" dy="6"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="1024" height="1024" rx="230" ry="230" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1024" height="540" rx="230" ry="230" fill="url(#topHighlight)"/>
+
+  <!-- Subtle dot grids -->
+  <g opacity="0.12" fill="#FFFFFF">
+    <circle cx="160" cy="180" r="6"/><circle cx="240" cy="180" r="6"/><circle cx="320" cy="180" r="6"/>
+    <circle cx="160" cy="260" r="6"/><circle cx="240" cy="260" r="6"/><circle cx="320" cy="260" r="6"/>
+    <circle cx="160" cy="340" r="6"/><circle cx="240" cy="340" r="6"/><circle cx="320" cy="340" r="6"/>
+  </g>
+  <g opacity="0.12" fill="#FFFFFF">
+    <circle cx="704" cy="700" r="6"/><circle cx="784" cy="700" r="6"/><circle cx="864" cy="700" r="6"/>
+    <circle cx="704" cy="780" r="6"/><circle cx="784" cy="780" r="6"/><circle cx="864" cy="780" r="6"/>
+    <circle cx="704" cy="860" r="6"/><circle cx="784" cy="860" r="6"/><circle cx="864" cy="860" r="6"/>
+  </g>
+
+  <!-- Phone device (slightly tilted, larger) -->
+  <g filter="url(#softShadow)" transform="translate(512 512) rotate(-6) translate(-512 -512)">
+    <rect x="296" y="148" width="432" height="744" rx="86" ry="86" fill="url(#phoneBody)"/>
+    <rect x="312" y="164" width="400" height="712" rx="74" ry="74" fill="#0E1633"/>
+    <rect x="332" y="184" width="360" height="672" rx="58" ry="58" fill="url(#screen)"/>
+
+    <!-- Camera dot -->
+    <circle cx="512" cy="220" r="11" fill="#0A0F22"/>
+    <circle cx="512" cy="220" r="6" fill="#1FAE5E" opacity="0.85"/>
+
+    <!-- Device list rows -->
+    <g>
+      <rect x="370" y="278" width="284" height="78" rx="20" fill="#FFFFFF" opacity="0.16"/>
+      <circle cx="408" cy="317" r="14" fill="#1FAE5E"/>
+      <rect x="442" y="302" width="180" height="10" rx="5" fill="#FFFFFF" opacity="0.85"/>
+      <rect x="442" y="324" width="120" height="8" rx="4" fill="#FFFFFF" opacity="0.5"/>
+
+      <rect x="370" y="372" width="284" height="78" rx="20" fill="#FFFFFF" opacity="0.10"/>
+      <circle cx="408" cy="411" r="14" fill="#FFFFFF" opacity="0.55"/>
+      <rect x="442" y="396" width="160" height="10" rx="5" fill="#FFFFFF" opacity="0.7"/>
+      <rect x="442" y="418" width="100" height="8" rx="4" fill="#FFFFFF" opacity="0.4"/>
+
+      <rect x="370" y="466" width="284" height="78" rx="20" fill="#FFFFFF" opacity="0.10"/>
+      <circle cx="408" cy="505" r="14" fill="#FFFFFF" opacity="0.55"/>
+      <rect x="442" y="490" width="200" height="10" rx="5" fill="#FFFFFF" opacity="0.7"/>
+      <rect x="442" y="512" width="130" height="8" rx="4" fill="#FFFFFF" opacity="0.4"/>
+
+      <rect x="370" y="560" width="284" height="78" rx="20" fill="#FFFFFF" opacity="0.10"/>
+      <circle cx="408" cy="599" r="14" fill="#FFFFFF" opacity="0.55"/>
+      <rect x="442" y="584" width="170" height="10" rx="5" fill="#FFFFFF" opacity="0.7"/>
+      <rect x="442" y="606" width="110" height="8" rx="4" fill="#FFFFFF" opacity="0.4"/>
+    </g>
+  </g>
+
+  <!-- Bordered status dot, partially overlapping the phone's top-right corner -->
+  <g filter="url(#dotShadow)">
+    <!-- The phone is rotated -6deg; this position lands on the top-right corner. -->
+    <circle cx="700" cy="150" r="42" fill="#1FAE5E" stroke="#FFFFFF" stroke-width="10"/>
+  </g>
+
+  <!-- Pilot droid (larger, fills the bottom-right quadrant) -->
+  <g transform="translate(720 880)" filter="url(#droidShadow)">
+    <!-- Head dome (Bugdroid silhouette) -->
+    <path d="M -160 -116 A 160 160 0 0 1 160 -116 L 160 0 L -160 0 Z" fill="url(#droidGreen)"/>
+
+    <!-- Eyes -->
+    <circle cx="-62" cy="-160" r="18" fill="#FFFFFF"/>
+    <circle cx="62" cy="-160" r="18" fill="#FFFFFF"/>
+
+    <!-- Pilot visor: dark crescent, slightly wider than the head -->
+    <path d="M -178 -224
+             Q 0 -228 178 -224
+             L 168 -200
+             Q 0 -178 -168 -200 Z"
+          fill="url(#capDark)"/>
+    <!-- Visor inner highlight (top edge sheen) -->
+    <path d="M -164 -222 Q 0 -226 164 -222"
+          stroke="#3A4860" stroke-width="2" fill="none" opacity="0.55"/>
+
+    <!-- Cap band: dark with a horizontal gold stripe -->
+    <rect x="-148" y="-258" width="296" height="34" fill="url(#capDark)"/>
+    <rect x="-148" y="-244" width="296" height="9" fill="url(#goldWings)"/>
+    <!-- Side buttons (chin-strap mounts) -->
+    <circle cx="-138" cy="-240" r="5" fill="url(#goldWings)"/>
+    <circle cx="138" cy="-240" r="5" fill="url(#goldWings)"/>
+    <circle cx="-138" cy="-240" r="2" fill="#7A5610"/>
+    <circle cx="138" cy="-240" r="2" fill="#7A5610"/>
+
+    <!-- Cap crown: dark, slightly flared, rounded top -->
+    <path d="M -148 -258
+             Q -196 -266 -196 -308
+             Q -190 -360 -148 -370
+             Q 0 -382 148 -370
+             Q 190 -360 196 -308
+             Q 196 -266 148 -258 Z"
+          fill="url(#capDark)"/>
+
+    <!-- Crown top highlight (subtle sheen) -->
+    <path d="M -136 -360 Q 0 -378 136 -360"
+          stroke="#3A4860" stroke-width="3" fill="none" opacity="0.7"
+          stroke-linecap="round"/>
+    <!-- Crown side highlight -->
+    <path d="M -176 -322 Q -188 -302 -184 -276"
+          stroke="#3A4860" stroke-width="2" fill="none" opacity="0.45"
+          stroke-linecap="round"/>
+
+    <!-- Pilot wings + shield insignia, centered on the crown -->
+    <g transform="translate(0 -310)">
+      <!-- Central shield -->
+      <path d="M -12 -14 L 12 -14 L 12 4 Q 12 16 0 21 Q -12 16 -12 4 Z"
+            fill="url(#goldWings)"/>
+      <rect x="-9" y="-9" width="18" height="3" fill="#7A5610" opacity="0.55"/>
+      <rect x="-9" y="-2" width="18" height="3" fill="#7A5610" opacity="0.55"/>
+      <!-- Wings (left) -->
+      <path d="M -72 0 Q -36 -16 -14 0 Q -36 9 -72 6 Z" fill="url(#goldWings)"/>
+      <path d="M -68 7 Q -38 0 -18 7 Q -38 13 -68 11 Z" fill="url(#goldWings)" opacity="0.75"/>
+      <!-- Wings (right) -->
+      <path d="M 72 0 Q 36 -16 14 0 Q 36 9 72 6 Z" fill="url(#goldWings)"/>
+      <path d="M 68 7 Q 38 0 18 7 Q 38 13 68 11 Z" fill="url(#goldWings)" opacity="0.75"/>
+      <!-- Feather lines -->
+      <path d="M -60 4 L -20 4 M 20 4 L 60 4"
+            stroke="#7A5610" stroke-width="2" opacity="0.55"/>
+    </g>
+
+    <!-- Antenna tips poking out the top of the cap -->
+    <line x1="-86" y1="-410" x2="-66" y2="-376" stroke="url(#droidGreen)" stroke-width="11" stroke-linecap="round"/>
+    <line x1="86" y1="-410" x2="66" y2="-376" stroke="url(#droidGreen)" stroke-width="11" stroke-linecap="round"/>
+  </g>
+</svg>

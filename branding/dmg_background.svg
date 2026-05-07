@@ -1,0 +1,48 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="80" y1="40" x2="1120" y2="720" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0D1E22"/>
+      <stop offset="0.45" stop-color="#102D31"/>
+      <stop offset="1" stop-color="#0A171A"/>
+    </linearGradient>
+    <radialGradient id="glowLeft" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(285 250) rotate(90) scale(310 370)">
+      <stop stop-color="#29C777" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#29C777" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowRight" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(920 450) rotate(90) scale(240 280)">
+      <stop stop-color="#00A6C8" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#00A6C8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pill" x1="0" y1="0" x2="420" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1FAE5E"/>
+      <stop offset="1" stop-color="#00A2C0"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" stroke="#A3C7CE" stroke-opacity="0.08"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="760" fill="url(#bg)"/>
+  <rect width="1200" height="760" fill="url(#grid)"/>
+  <rect width="1200" height="760" fill="url(#glowLeft)"/>
+  <rect width="1200" height="760" fill="url(#glowRight)"/>
+
+  <g opacity="0.55">
+    <path d="M110 610C245 575 308 515 368 435C425 358 486 268 634 235" stroke="#31D486" stroke-opacity="0.35" stroke-width="4" stroke-linecap="round"/>
+    <path d="M131 630C286 585 369 532 434 452C505 365 562 300 720 260" stroke="#57C9DD" stroke-opacity="0.3" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(78 86)">
+    <rect x="0" y="0" width="420" height="8" rx="4" fill="url(#pill)" opacity="0.9"/>
+    <text x="0" y="96" fill="#F2FBFD" font-size="74" font-family="SF Pro Display, Inter, Helvetica, Arial, sans-serif" font-weight="700" letter-spacing="-1.2">AVD Pilot</text>
+    <text x="3" y="146" fill="#A8C6CC" font-size="30" font-family="SF Pro Text, Inter, Helvetica, Arial, sans-serif" font-weight="500" letter-spacing="-0.2">Android Emulator Manager</text>
+    <text x="4" y="224" fill="#D4ECEF" font-size="24" font-family="SF Pro Text, Inter, Helvetica, Arial, sans-serif" font-weight="500">Drag AVD Pilot to Applications</text>
+  </g>
+
+  <g opacity="0.28">
+    <circle cx="786" cy="150" r="6" fill="#6FEAB2"/>
+    <circle cx="1065" cy="198" r="4" fill="#6FEAB2"/>
+    <circle cx="1002" cy="108" r="3" fill="#78D8EA"/>
+    <circle cx="1128" cy="126" r="2.5" fill="#78D8EA"/>
+  </g>
+</svg>
