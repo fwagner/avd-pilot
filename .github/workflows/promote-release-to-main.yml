@@ -72,7 +72,7 @@ jobs:
                   "- Source branch: `develop`",
                   "- Target branch: `main`",
                   "- Trigger: merged release PR on `develop`",
-                ].join("\\n"),
+                ].join("\n"),
                 maintainer_can_modify: true,
               })).data;
             }
