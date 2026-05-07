@@ -71,9 +71,14 @@ jobs:
           VERSION_LINE=$(grep '^version:' pubspec.yaml)
           VERSION=$(echo "$VERSION_LINE" | awk '{print $2}' | cut -d+ -f1)
           TAG="v${VERSION}"
-          shasum -a 256 "dist/AVD-Pilot-Installer.dmg" > "dist/AVD-Pilot-Installer.dmg.sha256"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          DMG_NAME="avd-pilot-${VERSION}.dmg"
+          mv "dist/AVD-Pilot-Installer.dmg" "dist/${DMG_NAME}"
+          shasum -a 256 "dist/${DMG_NAME}" > "dist/${DMG_NAME}.sha256"
+          {
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+            echo "dmg_name=$DMG_NAME"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create tag and publish GitHub release
         if: steps.gate.outputs.should_release == 'true'
@@ -81,6 +86,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.metadata.outputs.tag }}
           VERSION: ${{ steps.metadata.outputs.version }}
+          DMG_NAME: ${{ steps.metadata.outputs.dmg_name }}
         run: |
           set -euo pipefail
           if ! gh release view "$TAG" >/dev/null 2>&1; then
@@ -94,9 +100,8 @@ jobs:
 
           ## Verify download checksum
 
-          ```bash
-          shasum -a 256 AVD-Pilot-Installer.dmg
-          ```
+          Run:
+          shasum -a 256 <downloaded-dmg-file>
 
           Compare the output with the attached `.sha256` file.
 
@@ -110,6 +115,6 @@ jobs:
           fi
 
           gh release upload "$TAG" \
-            "dist/AVD-Pilot-Installer.dmg" \
-            "dist/AVD-Pilot-Installer.dmg.sha256" \
+            "dist/${DMG_NAME}" \
+            "dist/${DMG_NAME}.sha256" \
             --clobber
