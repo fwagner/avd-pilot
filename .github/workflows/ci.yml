@@ -34,9 +34,35 @@ jobs:
             revert
           requireScope: false
 
+  detect-changes:
+    name: detect-changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      app_changed: ${{ steps.filter.outputs.app }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Detect app-relevant file changes
+        id: filter
+        uses: dorny/paths-filter@6852f92c20ea7fd3b0c25de3b5112db3a98da050 # v3
+        with:
+          filters: |
+            app:
+              - 'lib/**'
+              - 'test/**'
+              - 'macos/**'
+              - 'pubspec.yaml'
+              - 'pubspec.lock'
+              - 'analysis_options.yaml'
+
   verify:
     name: verify
-    runs-on: macos-latest
+    needs: detect-changes
+    runs-on: ${{ needs.detect-changes.outputs.app_changed == 'true' && 'macos-latest' || 'ubuntu-latest' }}
     permissions:
       contents: read
     steps:
@@ -44,18 +70,27 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Flutter
+        if: needs.detect-changes.outputs.app_changed == 'true'
         uses: subosito/flutter-action@f2c4f6686ca8e8d6e6d0f28410eeef506ed66aff # v2.18.0
         with:
           channel: stable
 
       - name: Install dependencies
+        if: needs.detect-changes.outputs.app_changed == 'true'
         run: flutter pub get
 
       - name: Analyze
+        if: needs.detect-changes.outputs.app_changed == 'true'
         run: flutter analyze
 
       - name: Test
+        if: needs.detect-changes.outputs.app_changed == 'true'
         run: flutter test
 
       - name: Release build smoke test
+        if: needs.detect-changes.outputs.app_changed == 'true'
         run: flutter build macos --release
+
+      - name: Fast-path success when app code unchanged
+        if: needs.detect-changes.outputs.app_changed != 'true'
+        run: echo "No app-code changes detected; skipping expensive verification steps."
