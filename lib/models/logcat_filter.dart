@@ -21,7 +21,9 @@ class LogcatFilter {
       pidOrProcess.isNotEmpty;
 
   bool matches(LogLine entry, {String? processName}) {
-    assert(entry.isParsed, 'matches() must only be called on parsed lines');
+    if (!entry.isParsed) {
+      return true;
+    }
     if (entry.level!.index < minimumLevel.index) {
       return false;
     }
