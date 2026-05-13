@@ -46,3 +46,4 @@ app.*.map.json
 
 # Distribution artifacts (publish via GitHub Releases, not git)
 dist/*.dmg
+.jfdi/
