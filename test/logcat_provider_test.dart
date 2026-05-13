@@ -31,7 +31,10 @@ class _FakeLogcatService implements LogcatService {
   }) async {
     startCalls++;
     _running.add(avdName);
-    _controllers.putIfAbsent(avdName, () => StreamController<String>.broadcast());
+    _controllers.putIfAbsent(
+      avdName,
+      () => StreamController<String>.broadcast(),
+    );
   }
 
   @override
@@ -113,7 +116,11 @@ void main() {
     fakeService.emit('Pixel_API_35', 'line-1');
     await _settle();
     expect(
-      container.read(logcatNotifierProvider('Pixel_API_35')).lines,
+      container
+          .read(logcatNotifierProvider('Pixel_API_35'))
+          .lines
+          .map((line) => line.raw)
+          .toList(),
       <String>['line-1'],
     );
 
@@ -121,7 +128,11 @@ void main() {
     fakeService.emit('Pixel_API_35', 'line-2');
     await _settle();
     expect(
-      container.read(logcatNotifierProvider('Pixel_API_35')).lines,
+      container
+          .read(logcatNotifierProvider('Pixel_API_35'))
+          .lines
+          .map((line) => line.raw)
+          .toList(),
       <String>['line-1'],
     );
     expect(
@@ -133,7 +144,11 @@ void main() {
     fakeService.emit('Pixel_API_35', 'line-3');
     await _settle();
     expect(
-      container.read(logcatNotifierProvider('Pixel_API_35')).lines,
+      container
+          .read(logcatNotifierProvider('Pixel_API_35'))
+          .lines
+          .map((line) => line.raw)
+          .toList(),
       <String>['line-1', 'line-3'],
     );
     expect(
@@ -142,7 +157,10 @@ void main() {
     );
 
     notifier.clear();
-    expect(container.read(logcatNotifierProvider('Pixel_API_35')).lines, isEmpty);
+    expect(
+      container.read(logcatNotifierProvider('Pixel_API_35')).lines,
+      isEmpty,
+    );
 
     await fakeService.close('Pixel_API_35');
     await _settle();
@@ -189,7 +207,9 @@ void main() {
 
     final List<String> lines = container
         .read(logcatNotifierProvider('Pixel_API_36'))
-        .lines;
+        .lines
+        .map((line) => line.raw)
+        .toList();
     expect(lines.length, 5000);
     expect(lines.first, 'line-100');
     expect(lines.last, 'line-5099');
