@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:emulator_device_manager/models/log_line.dart';
+import 'package:emulator_device_manager/models/logcat_filter.dart';
+import 'package:emulator_device_manager/providers/logcat_filter_provider.dart';
 import 'package:emulator_device_manager/providers/logcat_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,9 +16,15 @@ class LogsTab extends ConsumerStatefulWidget {
 }
 
 class _LogsTabState extends ConsumerState<LogsTab> {
+  static const Duration _filterDebounce = Duration(milliseconds: 300);
+
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _tagFilterController = TextEditingController();
+  final TextEditingController _pidFilterController = TextEditingController();
   bool _isAtBottom = true;
   int _lastLineCount = 0;
+  Timer? _tagDebounce;
+  Timer? _pidDebounce;
 
   @override
   void initState() {
@@ -24,6 +34,10 @@ class _LogsTabState extends ConsumerState<LogsTab> {
 
   @override
   void dispose() {
+    _tagDebounce?.cancel();
+    _pidDebounce?.cancel();
+    _tagFilterController.dispose();
+    _pidFilterController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -60,10 +74,41 @@ class _LogsTabState extends ConsumerState<LogsTab> {
     _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
   }
 
+  void _onTagFilterChanged(String value) {
+    _tagDebounce?.cancel();
+    _tagDebounce = Timer(_filterDebounce, () {
+      if (!mounted) {
+        return;
+      }
+      ref
+          .read(logcatFilterProvider(widget.avdName).notifier)
+          .setTagFilter(value);
+    });
+  }
+
+  void _onPidFilterChanged(String value) {
+    _pidDebounce?.cancel();
+    _pidDebounce = Timer(_filterDebounce, () {
+      if (!mounted) {
+        return;
+      }
+      ref
+          .read(logcatFilterProvider(widget.avdName).notifier)
+          .setPidOrProcess(value);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final LogcatState logcat = ref.watch(
       logcatNotifierProvider(widget.avdName),
+    );
+    final List<LogLine> filteredLines = ref.watch(
+      filteredLogcatLinesProvider(widget.avdName),
+    );
+    final LogcatFilter filter = ref.watch(logcatFilterProvider(widget.avdName));
+    final LogcatFilterNotifier filterNotifier = ref.read(
+      logcatFilterProvider(widget.avdName).notifier,
     );
     final LogcatNotifier notifier = ref.read(
       logcatNotifierProvider(widget.avdName).notifier,
@@ -77,8 +122,8 @@ class _LogsTabState extends ConsumerState<LogsTab> {
         ? const Color(0xFFD4D4D4)
         : const Color(0xFFE6E6E6);
 
-    if (logcat.lines.length != _lastLineCount) {
-      _lastLineCount = logcat.lines.length;
+    if (filteredLines.length != _lastLineCount) {
+      _lastLineCount = filteredLines.length;
       if (_isAtBottom) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _snapToLatest());
       }
@@ -88,12 +133,42 @@ class _LogsTabState extends ConsumerState<LogsTab> {
       children: <Widget>[
         _LogToolbar(
           state: logcat,
-          lineCount: logcat.lines.length,
+          totalLineCount: logcat.lines.length,
+          filteredLineCount: filteredLines.length,
+          filterActive: filter.isActive,
           onPauseResume: () =>
               logcat.paused ? notifier.resume() : notifier.pause(),
           onReconnect: notifier.reconnect,
           onClear: notifier.clear,
+          onClearFilters: filter.isActive
+              ? () {
+                  _tagDebounce?.cancel();
+                  _pidDebounce?.cancel();
+                  _tagFilterController.clear();
+                  _pidFilterController.clear();
+                  filterNotifier.reset();
+                }
+              : null,
         ),
+        if (logcat.status == LogcatStatus.live ||
+            logcat.status == LogcatStatus.paused) ...<Widget>[
+          const SizedBox(height: 8),
+          _LogFilterToolbar(
+            filter: filter,
+            tagController: _tagFilterController,
+            pidController: _pidFilterController,
+            onLevelSelected: filterNotifier.setMinimumLevel,
+            onTagChanged: _onTagFilterChanged,
+            onPidChanged: _onPidFilterChanged,
+            onClearFilters: () {
+              _tagDebounce?.cancel();
+              _pidDebounce?.cancel();
+              _tagFilterController.clear();
+              _pidFilterController.clear();
+              filterNotifier.reset();
+            },
+          ),
+        ],
         const SizedBox(height: 8),
         Expanded(
           child: DecoratedBox(
@@ -109,10 +184,12 @@ class _LogsTabState extends ConsumerState<LogsTab> {
               borderRadius: BorderRadius.circular(8),
               child: Stack(
                 children: <Widget>[
-                  if (logcat.lines.isEmpty)
+                  if (filteredLines.isEmpty)
                     Center(
                       child: Text(
-                        _emptyLabel(logcat.status),
+                        logcat.lines.isNotEmpty
+                            ? 'No lines match filter'
+                            : _emptyLabel(logcat.status),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: consoleText.withValues(alpha: 0.7),
                         ),
@@ -122,11 +199,11 @@ class _LogsTabState extends ConsumerState<LogsTab> {
                     ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(0, 6, 0, 10),
-                      itemCount: logcat.lines.length,
+                      itemCount: filteredLines.length,
                       itemBuilder: (_, index) =>
-                          _buildLogLine(logcat.lines[index], consoleText),
+                          _buildLogLine(filteredLines[index], consoleText),
                     ),
-                  if (!_isAtBottom && logcat.lines.isNotEmpty)
+                  if (!_isAtBottom && filteredLines.isNotEmpty)
                     Positioned(
                       right: 12,
                       bottom: 12,
@@ -210,17 +287,23 @@ class _LogsTabState extends ConsumerState<LogsTab> {
 class _LogToolbar extends StatelessWidget {
   const _LogToolbar({
     required this.state,
-    required this.lineCount,
+    required this.totalLineCount,
+    required this.filteredLineCount,
+    required this.filterActive,
     required this.onPauseResume,
     required this.onReconnect,
     required this.onClear,
+    this.onClearFilters,
   });
 
   final LogcatState state;
-  final int lineCount;
+  final int totalLineCount;
+  final int filteredLineCount;
+  final bool filterActive;
   final VoidCallback onPauseResume;
   final VoidCallback onReconnect;
   final VoidCallback onClear;
+  final VoidCallback? onClearFilters;
 
   @override
   Widget build(BuildContext context) {
@@ -234,7 +317,9 @@ class _LogToolbar extends StatelessWidget {
         _StatusChip(status: state.status),
         const SizedBox(width: 8),
         Text(
-          '$lineCount lines',
+          filterActive
+              ? '${_formatLineCount(filteredLineCount)} of ${_formatLineCount(totalLineCount)} lines'
+              : '${_formatLineCount(totalLineCount)} lines',
           style: theme.textTheme.bodySmall?.copyWith(
             fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
           ),
@@ -266,6 +351,12 @@ class _LogToolbar extends StatelessWidget {
                       : Icons.pause_rounded),
           ),
         ),
+        if (filterActive && onClearFilters != null)
+          IconButton(
+            onPressed: onClearFilters,
+            tooltip: 'Clear filters',
+            icon: const Icon(Icons.filter_alt_off, size: 20),
+          ),
         IconButton(
           onPressed: state.lines.isEmpty ? null : onClear,
           tooltip: 'Clear logs',
@@ -274,6 +365,112 @@ class _LogToolbar extends StatelessWidget {
       ],
     );
   }
+}
+
+class _LogFilterToolbar extends StatelessWidget {
+  const _LogFilterToolbar({
+    required this.filter,
+    required this.tagController,
+    required this.pidController,
+    required this.onLevelSelected,
+    required this.onTagChanged,
+    required this.onPidChanged,
+    required this.onClearFilters,
+  });
+
+  final LogcatFilter filter;
+  final TextEditingController tagController;
+  final TextEditingController pidController;
+  final ValueChanged<LogLevel> onLevelSelected;
+  final ValueChanged<String> onTagChanged;
+  final ValueChanged<String> onPidChanged;
+  final VoidCallback onClearFilters;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+
+    return Row(
+      children: <Widget>[
+        PopupMenuButton<LogLevel>(
+          tooltip: 'Minimum level',
+          onSelected: onLevelSelected,
+          itemBuilder: (BuildContext context) {
+            return LogLevel.values
+                .map((LogLevel level) {
+                  return PopupMenuItem<LogLevel>(
+                    value: level,
+                    child: Text(_levelLetter(level)),
+                  );
+                })
+                .toList(growable: false);
+          },
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: cs.outlineVariant),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const Icon(Icons.filter_alt_outlined, size: 16),
+                  const SizedBox(width: 8),
+                  Text('Level: ${_levelLetter(filter.minimumLevel)}'),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 180,
+          child: TextField(
+            controller: tagController,
+            onChanged: onTagChanged,
+            decoration: const InputDecoration(
+              isDense: true,
+              hintText: 'Tags (-exclude)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 120,
+          child: TextField(
+            controller: pidController,
+            onChanged: onPidChanged,
+            decoration: const InputDecoration(
+              isDense: true,
+              hintText: 'PID / process',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        if (filter.isActive)
+          IconButton(
+            onPressed: onClearFilters,
+            tooltip: 'Clear filters',
+            icon: const Icon(Icons.filter_alt_off),
+          ),
+      ],
+    );
+  }
+}
+
+String _formatLineCount(int value) {
+  final String digits = value.toString();
+  final StringBuffer out = StringBuffer();
+  for (int i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) {
+      out.write(' ');
+    }
+    out.write(digits[i]);
+  }
+  return out.toString();
 }
 
 class _StatusChip extends StatelessWidget {
