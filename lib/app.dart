@@ -109,10 +109,7 @@ class EmulatorDeviceManagerApp extends StatelessWidget {
         isDense: true,
         filled: true,
         fillColor: scheme.surfaceContainerLow,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 8,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         hintStyle: textTheme.bodySmall?.copyWith(
           color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
         ),
@@ -243,9 +240,7 @@ class EmulatorDeviceManagerApp extends StatelessWidget {
       dialogTheme: DialogThemeData(
         backgroundColor: scheme.surfaceContainer,
         elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: scheme.inverseSurface,
@@ -253,9 +248,7 @@ class EmulatorDeviceManagerApp extends StatelessWidget {
           color: scheme.onInverseSurface,
         ),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       extensions: const <ThemeExtension<dynamic>>[_BrandTokens()],
     );

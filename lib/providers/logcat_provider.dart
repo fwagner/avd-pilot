@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:emulator_device_manager/models/avd.dart';
 import 'package:emulator_device_manager/models/avd_state.dart';
+import 'package:emulator_device_manager/models/log_line.dart';
 import 'package:emulator_device_manager/providers/avd_providers.dart';
 import 'package:emulator_device_manager/providers/sdk_providers.dart';
 import 'package:emulator_device_manager/services/android_sdk.dart';
@@ -12,19 +13,19 @@ enum LogcatStatus { idle, live, paused, disconnected, error }
 
 class LogcatState {
   const LogcatState({
-    this.lines = const <String>[],
+    this.lines = const <LogLine>[],
     this.paused = false,
     this.status = LogcatStatus.idle,
     this.error,
   });
 
-  final List<String> lines;
+  final List<LogLine> lines;
   final bool paused;
   final LogcatStatus status;
   final String? error;
 
   LogcatState copyWith({
-    List<String>? lines,
+    List<LogLine>? lines,
     bool? paused,
     LogcatStatus? status,
     String? error,
@@ -80,7 +81,7 @@ class LogcatNotifier extends StateNotifier<LogcatState> {
 
   StreamSubscription<String>? _logSubscription;
   Timer? _flushTimer;
-  final List<String> _buffer = <String>[];
+  final List<LogLine> _buffer = <LogLine>[];
   bool _hasPendingFlush = false;
   String? _currentSerial;
   String? _adbPath;
@@ -94,17 +95,13 @@ class LogcatNotifier extends StateNotifier<LogcatState> {
     final LogcatStatus nextStatus = _service.isRunning(_avdName)
         ? LogcatStatus.live
         : LogcatStatus.disconnected;
-    state = state.copyWith(
-      paused: false,
-      status: nextStatus,
-      clearError: true,
-    );
+    state = state.copyWith(paused: false, status: nextStatus, clearError: true);
   }
 
   void clear() {
     _buffer.clear();
     _hasPendingFlush = false;
-    state = state.copyWith(lines: const <String>[]);
+    state = state.copyWith(lines: const <LogLine>[]);
   }
 
   Future<void> reconnect() async {
@@ -179,19 +176,21 @@ class LogcatNotifier extends StateNotifier<LogcatState> {
       await _service.start(avdName: _avdName, adbPath: adbPath, serial: serial);
       await _logSubscription?.cancel();
       _intentionalDisconnect = false;
-      _logSubscription = _service.lines(_avdName).listen(
-        _onLine,
-        onDone: _onStreamClosed,
-        onError: (Object error, StackTrace stackTrace) {
-          state = state.copyWith(
-            status: LogcatStatus.error,
-            error: error.toString(),
+      _logSubscription = _service
+          .lines(_avdName)
+          .listen(
+            _onLine,
+            onDone: _onStreamClosed,
+            onError: (Object error, StackTrace stackTrace) {
+              state = state.copyWith(
+                status: LogcatStatus.error,
+                error: error.toString(),
+              );
+            },
           );
-        },
-      );
       state = state.copyWith(
         status: state.paused ? LogcatStatus.paused : LogcatStatus.live,
-        lines: List<String>.unmodifiable(_buffer),
+        lines: List<LogLine>.unmodifiable(_buffer),
         clearError: true,
       );
     } catch (error) {
@@ -203,7 +202,7 @@ class LogcatNotifier extends StateNotifier<LogcatState> {
     if (state.paused) {
       return;
     }
-    _buffer.add(line);
+    _buffer.add(LogLine.parse(line));
     if (_buffer.length > _logLimit) {
       _buffer.removeRange(0, _buffer.length - _logLimit);
     }
@@ -222,7 +221,7 @@ class LogcatNotifier extends StateNotifier<LogcatState> {
     }
     _hasPendingFlush = false;
     state = state.copyWith(
-      lines: List<String>.unmodifiable(_buffer),
+      lines: List<LogLine>.unmodifiable(_buffer),
       status: LogcatStatus.live,
     );
   }

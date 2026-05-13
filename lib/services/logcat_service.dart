@@ -45,7 +45,8 @@ class LogcatService {
       return;
     }
 
-    final StreamController<String> controller = StreamController<String>.broadcast();
+    final StreamController<String> controller =
+        StreamController<String>.broadcast();
     try {
       final Process process = await _startProcess(adbPath, <String>[
         '-s',

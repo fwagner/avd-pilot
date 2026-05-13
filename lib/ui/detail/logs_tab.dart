@@ -1,3 +1,4 @@
+import 'package:emulator_device_manager/models/log_line.dart';
 import 'package:emulator_device_manager/providers/logcat_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,7 +62,9 @@ class _LogsTabState extends ConsumerState<LogsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final LogcatState logcat = ref.watch(logcatNotifierProvider(widget.avdName));
+    final LogcatState logcat = ref.watch(
+      logcatNotifierProvider(widget.avdName),
+    );
     final LogcatNotifier notifier = ref.read(
       logcatNotifierProvider(widget.avdName).notifier,
     );
@@ -86,7 +89,8 @@ class _LogsTabState extends ConsumerState<LogsTab> {
         _LogToolbar(
           state: logcat,
           lineCount: logcat.lines.length,
-          onPauseResume: () => logcat.paused ? notifier.resume() : notifier.pause(),
+          onPauseResume: () =>
+              logcat.paused ? notifier.resume() : notifier.pause(),
           onReconnect: notifier.reconnect,
           onClear: notifier.clear,
         ),
@@ -119,35 +123,8 @@ class _LogsTabState extends ConsumerState<LogsTab> {
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(0, 6, 0, 10),
                       itemCount: logcat.lines.length,
-                      itemBuilder: (_, index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 1,
-                          ),
-                          child: Text(
-                            logcat.lines[index],
-                            style: TextStyle(
-                              color: consoleText,
-                              fontSize: 12,
-                              height: 1.35,
-                              letterSpacing: 0,
-                              fontFamily: 'SF Mono',
-                              fontFamilyFallback: const <String>[
-                                'Menlo',
-                                'Monaco',
-                                'Consolas',
-                                'Liberation Mono',
-                                'Courier New',
-                                'monospace',
-                              ],
-                              fontFeatures: const <FontFeature>[
-                                FontFeature.tabularFigures(),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+                      itemBuilder: (_, index) =>
+                          _buildLogLine(logcat.lines[index], consoleText),
                     ),
                   if (!_isAtBottom && logcat.lines.isNotEmpty)
                     Positioned(
@@ -155,7 +132,10 @@ class _LogsTabState extends ConsumerState<LogsTab> {
                       bottom: 12,
                       child: FilledButton.tonalIcon(
                         onPressed: _jumpToLatest,
-                        icon: const Icon(Icons.arrow_downward_rounded, size: 14),
+                        icon: const Icon(
+                          Icons.arrow_downward_rounded,
+                          size: 14,
+                        ),
                         label: const Text('Jump to latest'),
                       ),
                     ),
@@ -165,6 +145,50 @@ class _LogsTabState extends ConsumerState<LogsTab> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildLogLine(LogLine line, Color consoleText) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+      child: line.isParsed
+          ? Text.rich(
+              TextSpan(
+                style: _baseStyle(consoleText),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: '${line.timestamp} ',
+                    style: TextStyle(color: consoleText.withValues(alpha: 0.5)),
+                  ),
+                  TextSpan(
+                    text: '${line.pid!.padLeft(5)} ${line.tid!.padLeft(5)} ',
+                    style: TextStyle(color: consoleText.withValues(alpha: 0.4)),
+                  ),
+                  TextSpan(
+                    text: '${_levelLetter(line.level!)} ',
+                    style: TextStyle(
+                      color: _colorForLevel(line.level),
+                      fontWeight:
+                          line.level == LogLevel.error ||
+                              line.level == LogLevel.fatal
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  ),
+                  TextSpan(
+                    text: '${line.tag}: ',
+                    style: TextStyle(
+                      color: _colorForLevel(line.level).withValues(alpha: 0.7),
+                    ),
+                  ),
+                  TextSpan(
+                    text: line.message,
+                    style: TextStyle(color: _colorForLevel(line.level)),
+                  ),
+                ],
+              ),
+            )
+          : Text(line.raw, style: _baseStyle(consoleText)),
     );
   }
 
@@ -228,14 +252,18 @@ class _LogToolbar extends StatelessWidget {
           const Spacer(),
         const SizedBox(width: 8),
         IconButton(
-          onPressed: disconnected ? onReconnect : (canPause ? onPauseResume : null),
+          onPressed: disconnected
+              ? onReconnect
+              : (canPause ? onPauseResume : null),
           tooltip: disconnected
               ? 'Reconnect logcat'
               : (state.paused ? 'Resume' : 'Pause'),
           icon: Icon(
             disconnected
                 ? Icons.play_arrow_rounded
-                : (state.paused ? Icons.play_arrow_rounded : Icons.pause_rounded),
+                : (state.paused
+                      ? Icons.play_arrow_rounded
+                      : Icons.pause_rounded),
           ),
         ),
         IconButton(
@@ -298,4 +326,44 @@ class _StatusChip extends StatelessWidget {
       ),
     );
   }
+}
+
+TextStyle _baseStyle(Color color) => TextStyle(
+  color: color,
+  fontSize: 12,
+  height: 1.35,
+  letterSpacing: 0,
+  fontFamily: 'SF Mono',
+  fontFamilyFallback: const <String>[
+    'Menlo',
+    'Monaco',
+    'Consolas',
+    'Liberation Mono',
+    'Courier New',
+    'monospace',
+  ],
+  fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+);
+
+Color _colorForLevel(LogLevel? level) {
+  return switch (level) {
+    LogLevel.verbose => const Color(0xFF888888),
+    LogLevel.debug => const Color(0xFF6897DC),
+    LogLevel.info => const Color(0xFF48B685),
+    LogLevel.warning => const Color(0xFFD4A843),
+    LogLevel.error => const Color(0xFFE05252),
+    LogLevel.fatal => const Color(0xFFFF5252),
+    null => const Color(0xFFD4D4D4),
+  };
+}
+
+String _levelLetter(LogLevel level) {
+  return switch (level) {
+    LogLevel.verbose => 'V',
+    LogLevel.debug => 'D',
+    LogLevel.info => 'I',
+    LogLevel.warning => 'W',
+    LogLevel.error => 'E',
+    LogLevel.fatal => 'F',
+  };
 }
