@@ -112,13 +112,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                       SizedBox(
                         width: 380,
                         child: ColoredBox(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainer,
+                          color: Theme.of(context).colorScheme.surfaceContainer,
                           child: AvdListPane(
                             query: _query,
-                            onQueryChanged: (v) =>
-                                setState(() => _query = v),
+                            onQueryChanged: (v) => setState(() => _query = v),
                             onCreate: _create,
                             onStopAll: _stopAll,
                             onPrimaryAction: _onPrimaryAction,

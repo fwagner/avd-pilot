@@ -123,66 +123,8 @@ class _LogsTabState extends ConsumerState<LogsTab> {
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(0, 6, 0, 10),
                       itemCount: logcat.lines.length,
-                      itemBuilder: (_, index) {
-                        final LogLine line = logcat.lines[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 1,
-                          ),
-                          child: line.isParsed
-                              ? Text.rich(
-                                  TextSpan(
-                                    style: _baseStyle(consoleText),
-                                    children: <TextSpan>[
-                                      TextSpan(
-                                        text: '${line.timestamp} ',
-                                        style: TextStyle(
-                                          color: consoleText.withValues(
-                                            alpha: 0.5,
-                                          ),
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text:
-                                            '${line.pid!.padLeft(5)} ${line.tid!.padLeft(5)} ',
-                                        style: TextStyle(
-                                          color: consoleText.withValues(
-                                            alpha: 0.4,
-                                          ),
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: '${_levelLetter(line.level!)} ',
-                                        style: TextStyle(
-                                          color: _colorForLevel(line.level),
-                                          fontWeight:
-                                              line.level == LogLevel.error ||
-                                                  line.level == LogLevel.fatal
-                                              ? FontWeight.w600
-                                              : FontWeight.normal,
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: '${line.tag}: ',
-                                        style: TextStyle(
-                                          color: _colorForLevel(
-                                            line.level,
-                                          ).withValues(alpha: 0.7),
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: line.message,
-                                        style: TextStyle(
-                                          color: _colorForLevel(line.level),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : Text(line.raw, style: _baseStyle(consoleText)),
-                        );
-                      },
+                      itemBuilder: (_, index) =>
+                          _buildLogLine(logcat.lines[index], consoleText),
                     ),
                   if (!_isAtBottom && logcat.lines.isNotEmpty)
                     Positioned(
@@ -203,6 +145,50 @@ class _LogsTabState extends ConsumerState<LogsTab> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildLogLine(LogLine line, Color consoleText) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+      child: line.isParsed
+          ? Text.rich(
+              TextSpan(
+                style: _baseStyle(consoleText),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: '${line.timestamp} ',
+                    style: TextStyle(color: consoleText.withValues(alpha: 0.5)),
+                  ),
+                  TextSpan(
+                    text: '${line.pid!.padLeft(5)} ${line.tid!.padLeft(5)} ',
+                    style: TextStyle(color: consoleText.withValues(alpha: 0.4)),
+                  ),
+                  TextSpan(
+                    text: '${_levelLetter(line.level!)} ',
+                    style: TextStyle(
+                      color: _colorForLevel(line.level),
+                      fontWeight:
+                          line.level == LogLevel.error ||
+                              line.level == LogLevel.fatal
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  ),
+                  TextSpan(
+                    text: '${line.tag}: ',
+                    style: TextStyle(
+                      color: _colorForLevel(line.level).withValues(alpha: 0.7),
+                    ),
+                  ),
+                  TextSpan(
+                    text: line.message,
+                    style: TextStyle(color: _colorForLevel(line.level)),
+                  ),
+                ],
+              ),
+            )
+          : Text(line.raw, style: _baseStyle(consoleText)),
     );
   }
 

@@ -30,16 +30,13 @@ void main() {
         .toList();
 
     expect(executable, '/tmp/fake-adb');
-    expect(
-      arguments,
-      <String>[
-        '-s',
-        'emulator-5554',
-        'logcat',
-        '-v',
-        'threadtime',
-      ],
-    );
+    expect(arguments, <String>[
+      '-s',
+      'emulator-5554',
+      'logcat',
+      '-v',
+      'threadtime',
+    ]);
     expect(lines, <String>['line-1', 'line-2']);
     await service.stop('Pixel_API_35');
   });
