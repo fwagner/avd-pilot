@@ -25,7 +25,10 @@ class LogcatFilterNotifier extends StateNotifier<LogcatFilter> {
     final Set<String> exclude = <String>{};
     for (final String token in tokens) {
       if (token.startsWith('-')) {
-        exclude.add(token.substring(1));
+        final String tag = token.substring(1).trim();
+        if (tag.isNotEmpty) {
+          exclude.add(tag);
+        }
       } else {
         include.add(token);
       }

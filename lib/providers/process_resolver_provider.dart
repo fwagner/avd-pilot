@@ -47,13 +47,16 @@ class ProcessMapNotifier extends StateNotifier<Map<int, String>> {
       _serial = null;
       _resolver = null;
       _cancelRefreshTimer();
-      if (state.isNotEmpty) {
+      if (mounted && state.isNotEmpty) {
         state = const <int, String>{};
       }
       return;
     }
 
     final AndroidSdkPaths? sdkPaths = await _ref.read(sdkPathsProvider.future);
+    if (!mounted) {
+      return;
+    }
     if (sdkPaths == null) {
       _adbPath = null;
       _resolver = null;
@@ -92,7 +95,9 @@ class ProcessMapNotifier extends StateNotifier<Map<int, String>> {
     }
     try {
       await resolver.refresh();
-      state = resolver.processMap;
+      if (mounted) {
+        state = resolver.processMap;
+      }
     } catch (_) {
       // Ignore process map refresh failures; next tick will retry.
     }
