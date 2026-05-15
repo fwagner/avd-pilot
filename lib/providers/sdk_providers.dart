@@ -10,8 +10,12 @@ final shellServiceProvider = Provider<ShellService>((ref) => ShellService());
 final sdkServiceProvider = Provider<AndroidSdkService>(
   (ref) => AndroidSdkService(),
 );
+final avdRootOverrideProvider = Provider<String?>((ref) => null);
 final avdServiceProvider = Provider<AvdService>(
-  (ref) => AvdService(ref.read(shellServiceProvider)),
+  (ref) => AvdService(
+    ref.read(shellServiceProvider),
+    avdRootOverride: ref.watch(avdRootOverrideProvider),
+  ),
 );
 final sdkManagerServiceProvider = Provider<SdkManagerService>(
   (ref) => SdkManagerService(ref.read(shellServiceProvider)),

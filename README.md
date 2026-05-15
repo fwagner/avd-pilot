@@ -36,6 +36,8 @@ flutter analyze
 flutter test
 ```
 
+For contributor and AI-agent development workflow (including integration-test-first guidance for new flows), see `CONTRIBUTING.md`.
+
 ## Build release app
 
 ```bash
