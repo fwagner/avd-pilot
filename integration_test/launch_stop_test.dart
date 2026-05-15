@@ -48,7 +48,7 @@ void main() {
     );
     final FakeEmulatorService emulator = FakeEmulatorService(
       shell,
-      onStart: (_, __) {
+      onStart: (_, _) {
         launched = true;
       },
     );

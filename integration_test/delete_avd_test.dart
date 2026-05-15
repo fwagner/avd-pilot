@@ -47,7 +47,11 @@ void main() {
     await tester.tap(find.text('Pixel_8_API_35'));
     await tester.pump(const Duration(milliseconds: 100));
 
-    final BuildContext context = tester.element(find.text('Pixel_8_API_35').first);
+    // ignore: use_build_context_synchronously
+    final BuildContext context = tester.element(
+      find.text('Pixel_8_API_35').first,
+    );
+    // ignore: use_build_context_synchronously
     DeleteRequestedNotification().dispatch(context);
     await tester.pump(const Duration(milliseconds: 100));
     await tester.tap(find.widgetWithText(FilledButton, 'Delete'));

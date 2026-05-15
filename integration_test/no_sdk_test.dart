@@ -9,7 +9,7 @@ void main() {
     tester,
   ) async {
     final FakeShellService shell = FakeShellService(
-      handler: (_, __) => throw UnimplementedError('No shell calls expected'),
+      handler: (_, _) => throw UnimplementedError('No shell calls expected'),
     );
     final FakeEmulatorService emulator = FakeEmulatorService(shell);
 
