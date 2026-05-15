@@ -80,7 +80,7 @@ jobs:
             echo "dmg_name=$DMG_NAME"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Create tag and publish GitHub release
+      - name: Publish GitHub release assets
         if: steps.gate.outputs.should_release == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -89,11 +89,7 @@ jobs:
           DMG_NAME: ${{ steps.metadata.outputs.dmg_name }}
         run: |
           set -euo pipefail
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" \
-              --target "${GITHUB_SHA}" \
-              --title "AVD Pilot $VERSION" \
-              --notes "$(cat <<'EOF'
+          RELEASE_NOTES="$(cat <<'EOF'
           Automated release from the develop -> main promotion PR.
 
           This DMG is currently unsigned and not notarized.
@@ -112,6 +108,16 @@ jobs:
           3. Confirm the prompt to bypass Gatekeeper for this run.
           EOF
           )"
+
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --target "${GITHUB_SHA}" \
+              --title "AVD Pilot $VERSION" \
+              --notes "$RELEASE_NOTES"
+          else
+            gh release edit "$TAG" \
+              --title "AVD Pilot $VERSION" \
+              --notes "$RELEASE_NOTES"
           fi
 
           gh release upload "$TAG" \
