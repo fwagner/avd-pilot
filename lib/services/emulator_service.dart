@@ -7,9 +7,14 @@ import 'package:emulator_device_manager/services/shell.dart';
 
 class AlreadyRunningException implements Exception {}
 
+typedef ProcessStarter =
+    Future<Process> Function(String executable, List<String> args);
+
 class EmulatorService {
-  EmulatorService(this._shell);
+  EmulatorService(this._shell, {ProcessStarter? processStarter})
+    : _processStarter = processStarter ?? _defaultProcessStarter;
   final ShellService _shell;
+  final ProcessStarter _processStarter;
 
   final Map<String, Process> _launches = <String, Process>{};
   final Map<String, int> _ports = <String, int>{};
@@ -17,6 +22,17 @@ class EmulatorService {
   final Map<String, DateTime> _stopRequests = <String, DateTime>{};
 
   int _nextPort = 5554;
+
+  static Future<Process> _defaultProcessStarter(
+    String executable,
+    List<String> args,
+  ) {
+    return Process.start(executable, args, mode: ProcessStartMode.detached);
+  }
+
+  Future<Process> startProcess(String executable, List<String> args) {
+    return _processStarter(executable, args);
+  }
 
   // Exposed for tests.
   void seedLaunchPortForTesting(String avdName, int port) {
@@ -66,11 +82,7 @@ class EmulatorService {
     if (coldBoot) {
       args.add('-no-snapshot-load');
     }
-    final Process process = await Process.start(
-      emulatorPath,
-      args,
-      mode: ProcessStartMode.detached,
-    );
+    final Process process = await startProcess(emulatorPath, args);
     _launches[avdName] = process;
     _ports[avdName] = port;
     _launchStartedAt[avdName] = DateTime.now();

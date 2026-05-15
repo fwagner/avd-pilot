@@ -8,11 +8,13 @@ import 'package:emulator_device_manager/services/shell.dart';
 import 'package:path/path.dart' as p;
 
 class AvdService {
-  AvdService(this._shell);
+  AvdService(this._shell, {String? avdRootOverride})
+    : _avdRootOverride = avdRootOverride;
   final ShellService _shell;
+  final String? _avdRootOverride;
 
   String get _home => Platform.environment['HOME'] ?? '';
-  String get _avdRoot => p.join(_home, '.android', 'avd');
+  String get _avdRoot => _avdRootOverride ?? p.join(_home, '.android', 'avd');
 
   Future<List<Avd>> listAvds() async {
     final Directory root = Directory(_avdRoot);
