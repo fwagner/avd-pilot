@@ -31,8 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
+  flutter_riverpod: ^3.3.2
+  riverpod_annotation: ^4.0.3
   shared_preferences: ^2.5.3
   path: ^1.9.1
   collection: ^1.19.1
